@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="AccountManagement.Application/AccountManagement.Application.csproj" />
+    <Project Path="AccountManagement.Domain/AccountManagement.Domain.csproj" />
+  </Folder>
+  <Folder Name="/src/Infrastructure/">
+    <Project Path="AccountManagement.Infra/AccountManagement.Infra.csproj" />
+  </Folder>
+  <Folder Name="/src/Presentation/">
+    <Project Path="AccountManagement.WebAPI/AccountManagement.WebAPI.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+</Solution>
