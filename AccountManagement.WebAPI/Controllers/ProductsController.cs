@@ -1,10 +1,8 @@
-﻿using AccountManagement.Application.Validators;
+﻿using AccountManagement.Application.Common.Responses;
+using AccountManagement.Application.Validators;
 using AccountManagement.Domain.Entities;
-using AccountManagement.Application.Common.Responses;
 using FluentValidation;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 
 namespace AccountManagement.WebAPI.Controllers
 {
@@ -33,8 +31,23 @@ namespace AccountManagement.WebAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            var product = products.FirstOrDefault(p => p.Id == id);
-            return product == null ? NotFound() : Ok(product);
+            var product =  products.FirstOrDefault(p => p.Id == id);
+
+            if (product == null)
+            {
+                var error = new ApiError
+                {
+                    FieldErrors = null,
+                    GeneralErrors = new List<string>
+                    {
+                        "The requested product with id {{id}} was not found."
+                    }
+                };
+
+                return NotFound(error); 
+            }
+
+            return Ok(product);
         }
 
         [HttpPost]

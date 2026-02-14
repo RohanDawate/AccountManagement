@@ -22,15 +22,43 @@ namespace AccountManagement.WebAPI.Middleware
             context.Response.Body.Seek(0, SeekOrigin.Begin);
 
             context.Response.Body = originalBodyStream;
-
             var statusCode = context.Response.StatusCode;
-            object? data = null;
+            var traceId = context.TraceIdentifier;
 
+            object? data = null;
             if (!string.IsNullOrWhiteSpace(bodyText))
             {
+                //try
+                //{
+                //    if (statusCode >= 400)
+                //    {
+                //        // Deserialize directly into ApiError
+                //        data = JsonSerializer.Deserialize<ApiError>(bodyText);
+                //    }
+                //    else
+                //    {
+                //        // For success, deserialize into a generic object
+                //        data = JsonSerializer.Deserialize<object>(bodyText);
+                //    }
+                //}
+                //catch
+                //{
+                //    data = bodyText; // fallback if not JSON
+                //}
+
+                string? message = null;
+
+
                 try
                 {
-                    data = JsonSerializer.Deserialize<object>(bodyText);
+                    var parsed = JsonSerializer.Deserialize<JsonElement>(bodyText);
+
+                    if (parsed.TryGetProperty("message", out var msgElement) && msgElement.ValueKind == JsonValueKind.String)
+                    {
+                        message = msgElement.GetString();
+                    }
+
+                    data = parsed.TryGetProperty("data", out var dataElement) ? dataElement : parsed;
                 }
                 catch
                 {
@@ -38,79 +66,82 @@ namespace AccountManagement.WebAPI.Middleware
                 }
             }
 
-            ApiResponse<object> apiResponse;
-
+            ApiResponse<object> response;
             if (statusCode >= 200 && statusCode < 300)
             {
                 // ✅ Success
-                apiResponse = ApiResponse<object>.Ok(data, context.TraceIdentifier);
+                response = ApiResponse<object>.Ok(data, message: "", traceId: traceId);
             }
             else if (statusCode >= 300 && statusCode < 400)
             {
                 // ✅ Redirection
-                apiResponse = ApiResponse<object>.Failure(
-                    "Redirection",
-                    $"Request was redirected (status {statusCode}).",
-                    statusCode,
-                    context.TraceIdentifier
+                response = ApiResponse<object>.Failure(
+                    status: statusCode,
+                    message: "Redirection occurred",
+                    error: null, //new { location = context.Response.Headers["Location"].ToString() },
+                    traceId: traceId
                 );
             }
             else if (statusCode >= 400 && statusCode < 500)
             {
-                string title;
-                string detail;
-
-                switch (statusCode)
+                ApiError? errorResponse = data as ApiError ?? new ApiError
                 {
-                    case StatusCodes.Status400BadRequest:
-                        title = "Bad Request";
-                        detail = "The request could not be understood or was invalid.";
-                        break;
-                    case StatusCodes.Status401Unauthorized:
-                        title = "Unauthorized";
-                        detail = "Authentication is required to access this resource.";
-                        break;
-                    case StatusCodes.Status403Forbidden:
-                        title = "Forbidden";
-                        detail = "You do not have permission to access this resource.";
-                        break;
-                    case StatusCodes.Status404NotFound:
-                        title = "Not Found";
-                        detail = "The requested resource was not found.";
-                        break;
-                    default:
-                        title = "Client Error";
-                        detail = $"A client error occurred (status {statusCode}).";
-                        break;
-                }
+                    FieldErrors = null,
+                    GeneralErrors = new List<string> { "The requested resource was not found." }
+                };
 
-                apiResponse = ApiResponse<object>.Failure(title, detail, statusCode, context.TraceIdentifier);
+                // ✅ Prefer controller’s message
+                string message = errorResponse.GeneralErrors != null && errorResponse.GeneralErrors.Any()
+                    ? string.Join("; ", errorResponse.GeneralErrors)
+                    : statusCode switch
+                    {
+                        StatusCodes.Status400BadRequest => "Validation failed",
+                        StatusCodes.Status401Unauthorized => "Authentication required",
+                        StatusCodes.Status403Forbidden => "Access denied",
+                        StatusCodes.Status404NotFound => "The requested resource was not found",
+                        StatusCodes.Status429TooManyRequests => "Too many requests, please try again later",
+                        _ => $"A client error occurred (status {statusCode})"
+                    };
 
-                if (data != null)
-                    apiResponse.Error!.Extensions["errors"] = data;
+                response = ApiResponse<object>.Failure(
+                    status: statusCode,
+                    message: message,
+                    error: errorResponse,
+                    traceId: traceId
+                );
+
             }
             else if (statusCode >= 500)
             {
-                string title = "Server Error";
-                string detail = "An unexpected server error occurred.";
+                // ✅ Server errors
+                var errorResponse = new ApiError
+                {
+                    FieldErrors = null, // no field-specific errors for 404
+                    GeneralErrors = new List<string>() 
+                    {
+                        "An unexpected server error occurred"
+                    }
+                };
 
-                apiResponse = ApiResponse<object>.Failure(title, detail, statusCode, context.TraceIdentifier);
-
-                if (data != null)
-                    apiResponse.Error!.Extensions["details"] = data;
+                response = ApiResponse<object>.Failure(
+                    status: statusCode,
+                    message: "An unexpected server error occurred",
+                    error: errorResponse,
+                    traceId: traceId
+                );
             }
             else
             {
-                apiResponse = ApiResponse<object>.Failure(
-                    "Unknown Status",
-                    $"Unexpected status code {statusCode}.",
-                    statusCode,
-                    context.TraceIdentifier
+                // ✅ Fallback
+                response = ApiResponse<object>.Failure(
+                    status: statusCode,
+                    message: $"Unexpected status code {statusCode}",
+                    error: null,
+                    traceId: traceId
                 );
             }
 
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(JsonSerializer.Serialize(apiResponse));
+            await context.Response.WriteAsJsonAsync(response);
         }
 
     }

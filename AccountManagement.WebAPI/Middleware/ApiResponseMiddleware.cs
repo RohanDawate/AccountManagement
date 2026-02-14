@@ -1,6 +1,4 @@
 ﻿using AccountManagement.Application.Common.Responses;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
 
 namespace AccountManagement.WebAPI.Middleware
@@ -41,78 +39,24 @@ namespace AccountManagement.WebAPI.Middleware
                 }
             }
 
-            ApiResponse<object> apiResponse;
-
-            if (statusCode >= 200 && statusCode < 300)
-            {
-                // ✅ Success
-                apiResponse = ApiResponse<object>.Ok(data, context.TraceIdentifier);
-            }
-            else if (statusCode >= 300 && statusCode < 400)
-            {
-                // ✅ Redirection
-                apiResponse = ApiResponse<object>.Failure(
-                    "Redirection",
-                    $"Request was redirected (status {statusCode}).",
-                    statusCode,
-                    context.TraceIdentifier
-                );
-            }
-            else if (statusCode >= 400 && statusCode < 500)
-            {
-                // ✅ Client error
-                apiResponse = ApiResponse<object>.Failure(
-                    "Client Error",
-                    $"A client error occurred (status {statusCode}).",
-                    statusCode,
-                    context.TraceIdentifier
-                );
-
-                // include original body if available
-                if (data != null)
-                    apiResponse.Error!.Extensions["details"] = data;
-            }
-            else if (statusCode >= 500)
-            {
-                // ✅ Server error
-                apiResponse = ApiResponse<object>.Failure(
-                    "Server Error",
-                    $"An unexpected server error occurred (status {statusCode}).",
-                    statusCode,
-                    context.TraceIdentifier
-                );
-
-                if (data != null)
-                    apiResponse.Error!.Extensions["details"] = data;
-            }
-            else
-            {
-                // fallback
-                apiResponse = ApiResponse<object>.Failure(
-                    "Unknown Status",
-                    $"Unexpected status code {statusCode}.",
-                    statusCode,
-                    context.TraceIdentifier
-                );
+            ApiResponse<object> response = null;
+            if (context.Response.StatusCode >= 200 && context.Response.StatusCode < 300) 
+            { 
+                if (data is null) 
+                { 
+                    var errorResponse = new ApiError { GeneralErrors = new List<string> { "Resource not found" } }; 
+                    
+                    response = ApiResponse<object>.Failure(error: errorResponse, message: "Resource not found", 
+                        status: StatusCodes.Status404NotFound, traceId: context.TraceIdentifier); 
+                    
+                    context.Response.StatusCode = StatusCodes.Status404NotFound; } 
+                
+                else { 
+                    response = ApiResponse<object>.Ok(data: data, status: context.Response.StatusCode, 
+                        traceId: context.TraceIdentifier); } 
             }
 
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsync(JsonSerializer.Serialize(apiResponse));
-
-            //if (context.Response.StatusCode >= 200 && context.Response.StatusCode < 300)
-            //{
-            //    var apiResponse = ApiResponse<object>.Ok(data, context.TraceIdentifier);
-            //    //apiResponse.Success = true;
-            //    //apiResponse.Error = null;
-
-            //    context.Response.ContentType = "application/json";
-            //    await context.Response.WriteAsync(JsonSerializer.Serialize(apiResponse));
-            //}
-            //else
-            //{
-            //    await responseBody.CopyToAsync(originalBodyStream);
-            //    context.Response.Body = originalBodyStream;
-            //}
+            await context.Response.WriteAsJsonAsync(response);
         }
     }
 
