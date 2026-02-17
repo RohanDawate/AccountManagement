@@ -6,9 +6,16 @@ namespace AccountManagement.WebAPI.Extensions
     {
         public static IApplicationBuilder UseApiMiddlewares(this IApplicationBuilder app)
         {
-            app.UseMiddleware<ExceptionMiddleware>();
+            // 1️. TraceId enrichment — push TraceId once
+            app.UseMiddleware<TraceIdMiddleware>(); 
+            
+            // 2️. Exception handling — centralized, catches everything downstream
+            app.UseMiddleware<ExceptionMiddleware>(); 
+            
+            // 3️. Request/Response logging — logs structured request/response
             app.UseMiddleware<RequestResponseLoggingMiddleware>();
-            //app.UseMiddleware<ApiResponseMiddleware>();
+
+            // 4. Envelope every response uniformly
             app.UseMiddleware<UnifiedResponseMiddleware>();
 
             app.UseHttpsRedirection();
@@ -23,7 +30,7 @@ namespace AccountManagement.WebAPI.Extensions
             // Root endpoint for friendly startup message
             endpoints.MapGet("/", () => Results.Ok(new 
             { 
-                message = "AccountManagement API is running...", 
+                message = "Account Management API is running...", 
                 environment = env.EnvironmentName 
             }));
 

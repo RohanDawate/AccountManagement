@@ -8,16 +8,23 @@ namespace AccountManagement.WebAPI.Extensions
             {
                 hostBuilder.UseSerilog((context, services, configuration) =>
                 {
+                    // Read custom path from config
+                    var logFilePath = context.Configuration["LoggingOptions:LogFilePath"] 
+                            ?? "Logs/api-log-.json"; // fallback if not set
+
                     configuration
                         .ReadFrom.Configuration(context.Configuration)
                         .ReadFrom.Services(services)
                         .Enrich.FromLogContext()
-                        .WriteTo.Console()
+                        .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter())
                         .WriteTo.File(
-                            path: "Logs/log-.txt", 
-                            rollingInterval: RollingInterval.Day, 
-                            shared: true, 
-                            outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}");
+                            new Serilog.Formatting.Json.JsonFormatter(), 
+                            path: logFilePath,
+                            rollingInterval: RollingInterval.Day,
+                            fileSizeLimitBytes: 1 * 1024 * 1024 , // 1 MB
+                            rollOnFileSizeLimit: true,
+                            shared: true
+                        );
                 });
 
                 return hostBuilder;

@@ -1,4 +1,6 @@
 ﻿using Serilog;
+using System.Text;
+using AccountManagement.WebAPI.Extensions;
 
 namespace AccountManagement.WebAPI.Middleware
 {
@@ -16,33 +18,48 @@ namespace AccountManagement.WebAPI.Middleware
 
         public async Task InvokeAsync(HttpContext context)
         {
-            // Log Request
             context.Request.EnableBuffering();
-            var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            context.Request.Body.Position = 0;
 
-            Log.Information("Incoming Request: {method} {url} \nHeaders: {headers} \nBody: {body}",
-                context.Request.Method,
-                context.Request.Path,
-                context.Request.Headers,
-                requestBody);
+            // Capture headers
+            var headers = context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
 
-            // Capture Response
+            // Capture request body
+            string requestBody = "";
+            if (context.Request.ContentLength > 0)
+            {
+                using var reader = new StreamReader(context.Request.Body, Encoding.UTF8, leaveOpen: true);
+                requestBody = await reader.ReadToEndAsync();
+                context.Request.Body.Position = 0;
+            }
+
+            // Capture response
             var originalBodyStream = context.Response.Body;
-            using var responseBody = new MemoryStream();
-            context.Response.Body = responseBody;
-
+            using var responseBodyStream = new MemoryStream();
+            context.Response.Body = responseBodyStream;
+                       
             await _next(context);
 
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
-            var responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
-            context.Response.Body.Seek(0, SeekOrigin.Begin);
+            responseBodyStream.Seek(0, SeekOrigin.Begin);
+            var responseBody = await new StreamReader(responseBodyStream).ReadToEndAsync();
+            responseBodyStream.Seek(0, SeekOrigin.Begin);
+            await responseBodyStream.CopyToAsync(originalBodyStream);
 
-            Log.Information("Outgoing Response: {statusCode} \nBody: {body}",
-                context.Response.StatusCode,
-                responseText);
+            var logEntry = new ApiLogEntry
+            {
+                Timestamp = DateTime.UtcNow,
+                Endpoint = $"{context.Request.Method} {context.Request.Path}",
+                Headers = headers,
+                RequestBody = requestBody,
+                ResponseBody = responseBody,
+                StatusCode = context.Response.StatusCode,
+                Message = "Request processed",
+                StackTrace = null,
+                IsSuccess = context.Response.StatusCode < 400
+            };
 
-            await responseBody.CopyToAsync(originalBodyStream);
+            Log.Information("{@ApiLogEntry}", logEntry);
+            
+            context.Response.Body = originalBodyStream;
 
         }
     }
