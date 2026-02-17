@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
+﻿using Serilog;
 
 namespace AccountManagement.WebAPI.Middleware
 {
@@ -22,7 +21,7 @@ namespace AccountManagement.WebAPI.Middleware
             var requestBody = await new StreamReader(context.Request.Body).ReadToEndAsync();
             context.Request.Body.Position = 0;
 
-            _logger.LogInformation("Incoming Request: {method} {url} \nHeaders: {headers} \nBody: {body}",
+            Log.Information("Incoming Request: {method} {url} \nHeaders: {headers} \nBody: {body}",
                 context.Request.Method,
                 context.Request.Path,
                 context.Request.Headers,
@@ -39,7 +38,7 @@ namespace AccountManagement.WebAPI.Middleware
             var responseText = await new StreamReader(context.Response.Body).ReadToEndAsync();
             context.Response.Body.Seek(0, SeekOrigin.Begin);
 
-            _logger.LogInformation("Outgoing Response: {statusCode} \nBody: {body}",
+            Log.Information("Outgoing Response: {statusCode} \nBody: {body}",
                 context.Response.StatusCode,
                 responseText);
 

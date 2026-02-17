@@ -1,6 +1,31 @@
-﻿namespace AccountManagement.WebAPI.Extensions
+﻿using AccountManagement.Application.Validators;
+using FluentValidation;
+using Microsoft.AspNetCore.Mvc;
+
+namespace AccountManagement.WebAPI.Extensions
 {
-    public class ServiceCollectionExtensions
+    public static class ServiceCollectionExtensions
     {
+        public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration config)
+        {
+            // Controllers
+            services.AddControllers();
+
+            // OpenAPI + Endpoints Explorer
+            services.AddOpenApi();
+            services.AddEndpointsApiExplorer();
+
+            // FluentValidation
+            services.AddValidatorsFromAssemblyContaining<ProductValidator>();
+
+            // Disable automatic 400 responses from [ApiController]
+            services.Configure<ApiBehaviorOptions>(options =>
+            {
+                options.SuppressModelStateInvalidFilter = true;
+            });
+
+            return services;
+
+        }
     }
 }
