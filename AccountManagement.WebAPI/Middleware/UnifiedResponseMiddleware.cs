@@ -48,7 +48,6 @@ namespace AccountManagement.WebAPI.Middleware
 
                 string? message = null;
 
-
                 try
                 {
                     var parsed = JsonSerializer.Deserialize<JsonElement>(bodyText);
