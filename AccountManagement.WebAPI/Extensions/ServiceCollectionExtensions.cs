@@ -9,7 +9,12 @@ namespace AccountManagement.WebAPI.Extensions
         public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration config)
         {
             // Controllers
-            services.AddControllers();
+            services.AddControllers()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                });
+
 
             // OpenAPI + Endpoints Explorer
             services.AddOpenApi();

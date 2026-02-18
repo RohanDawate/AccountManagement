@@ -3,6 +3,7 @@ using AccountManagement.Application.Validators;
 using AccountManagement.Domain.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AccountManagement.WebAPI.Controllers
 {
@@ -26,10 +27,17 @@ namespace AccountManagement.WebAPI.Controllers
         };
 
         [HttpGet]
-        public ActionResult<List<Product>> GetProducts() => Ok(products);
+        public ActionResult<List<Product>> GetProducts()
+        {
+            return Ok(ApiResponse<IEnumerable<Product>>.Ok(
+                products, 
+                message: "Products retrieved successfully", 
+                status: 200, 
+                traceId: HttpContext.TraceIdentifier));
+        }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetProduct(int id)
+        public ActionResult<ApiResponse<Product>> GetProduct(int id)
         {
             var product =  products.FirstOrDefault(p => p.Id == id);
 
@@ -38,16 +46,17 @@ namespace AccountManagement.WebAPI.Controllers
                 var error = new ApiError
                 {
                     FieldErrors = null,
-                    GeneralErrors = new List<string>
-                    {
-                        "The requested product with id {{id}} was not found."
-                    }
+                    GeneralErrors = new List<string> { $"Product with id {id} not found." }
                 };
 
-                return NotFound(error); 
+                return NotFound(ApiResponse<Product>.Failure(error, $"Product with id {id} not found.", 404, HttpContext.TraceIdentifier));
             }
 
-            return Ok(product);
+            return Ok(ApiResponse<Product>.Ok(
+                product, 
+                message: "Product retrieved successfully", 
+                status: 200, 
+                traceId: HttpContext.TraceIdentifier));
         }
 
         [HttpPost]
@@ -59,7 +68,11 @@ namespace AccountManagement.WebAPI.Controllers
 
             products.Add(product);
 
-            return Ok(product);
+            return Ok(ApiResponse<Product>.Ok(
+                product,
+                message: "Product created successfully",
+                status: 200,
+                traceId: HttpContext.TraceIdentifier));
         }
     }
 }
