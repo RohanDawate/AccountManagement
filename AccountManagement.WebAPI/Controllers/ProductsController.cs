@@ -3,7 +3,6 @@ using AccountManagement.Application.Validators;
 using AccountManagement.Domain.Entities;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AccountManagement.WebAPI.Controllers
 {
@@ -26,13 +25,19 @@ namespace AccountManagement.WebAPI.Controllers
             new Product { Id = 4, Name = "RADH", Description = "", CategoryType = "", Category = "", Price = 1.2m  }
         };
 
+        [HttpGet("error")]
+        public ActionResult DisplayError()
+        {
+            throw new InvalidOperationException("Simulated unexpected error for testing");
+        }
+
         [HttpGet]
         public ActionResult<List<Product>> GetProducts()
         {
             return Ok(ApiResponse<IEnumerable<Product>>.Ok(
-                products, 
-                message: "Products retrieved successfully", 
-                status: 200, 
+                products,
+                message: "Products retrieved successfully",
+                status: 200,
                 traceId: HttpContext.TraceIdentifier));
         }
 

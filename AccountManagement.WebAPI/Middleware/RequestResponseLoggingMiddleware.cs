@@ -1,6 +1,7 @@
-﻿using Serilog;
+﻿using AccountManagement.WebAPI.Extensions;
+using Microsoft.AspNetCore.Mvc.Controllers;
+using Serilog;
 using System.Text;
-using AccountManagement.WebAPI.Extensions;
 
 namespace AccountManagement.WebAPI.Middleware
 {
@@ -8,13 +9,8 @@ namespace AccountManagement.WebAPI.Middleware
     public class RequestResponseLoggingMiddleware
     {
         private readonly RequestDelegate _next;
-        private readonly ILogger<RequestResponseLoggingMiddleware> _logger;
 
-        public RequestResponseLoggingMiddleware(RequestDelegate next, ILogger<RequestResponseLoggingMiddleware> logger)
-        {
-            _next = next;
-            _logger = logger;
-        }
+        public RequestResponseLoggingMiddleware(RequestDelegate next) => _next = next;
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -44,16 +40,30 @@ namespace AccountManagement.WebAPI.Middleware
             responseBodyStream.Seek(0, SeekOrigin.Begin);
             await responseBodyStream.CopyToAsync(originalBodyStream);
 
+            // Capture details from the context object
+            var endpoint = context.GetEndpoint(); 
+            var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>(); 
+            var controllerName = actionDescriptor?.ControllerName; 
+            var actionName = actionDescriptor?.ActionName;
+
+            // Capture stack trace if ExceptionMiddleware stored it
+            var exception = context.Items["Exception"] as Exception;
+
+            var stackTrace = context.Items["ExceptionStackTrace"]?.ToString();
+            var exceptionController = context.Items["ExceptionController"]?.ToString() ?? controllerName; 
+            var exceptionAction = context.Items["ExceptionAction"]?.ToString() ?? actionName; 
+            var methodName = context.Items["ExceptionMethodName"]?.ToString();
+
             var logEntry = new ApiLogEntry
             {
-                Timestamp = DateTime.UtcNow,
+                Timestamp = DateTime.Now,
                 Endpoint = $"{context.Request.Method} {context.Request.Path}",
                 Headers = headers,
                 RequestBody = requestBody,
                 ResponseBody = responseBody,
                 StatusCode = context.Response.StatusCode,
-                Message = "Request processed",
-                StackTrace = null,
+                Message = exception != null ? "Unhandled exception" : "Request processed",
+                StackTrace = exception?.ToString(),
                 IsSuccess = context.Response.StatusCode < 400
             };
 
