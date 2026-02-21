@@ -1,5 +1,4 @@
 ﻿using Serilog;
-using AccountManagement.WebAPI.Extensions;
 
 namespace AccountManagement.WebAPI.Extensions
 {

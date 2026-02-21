@@ -8,22 +8,17 @@ namespace AccountManagement.WebAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class ProductsController(ProductValidator validator) : ControllerBase
     {
-        private readonly IValidator<Product> _validator;
+        private readonly IValidator<Product> _validator = validator; 
 
-        public ProductsController(ProductValidator validator) 
-        { 
-            _validator = validator; 
-        }
-
-        private static List<Product> products = new List<Product>
-        {
-            new Product { Id = 1, Name = "RAJ", Description = "", CategoryType = "", Category = "", Price = 1.2m },
-            new Product { Id = 2, Name = "RIDD", Description = "", CategoryType = "", Category = "", Price = 1.2m  },
-            new Product { Id = 3, Name = "ROHA", Description = "", CategoryType = "", Category = "", Price = 1.2m  },
-            new Product { Id = 4, Name = "RADH", Description = "", CategoryType = "", Category = "", Price = 1.2m  }
-        };
+        private static List<Product> products =
+        [
+            new() { Id = 1, Name = "RAJ", Description = "", CategoryType = "", Category = "", Price = 1.2m },
+            new() { Id = 2, Name = "RIDD", Description = "", CategoryType = "", Category = "", Price = 1.2m  },
+            new() { Id = 3, Name = "ROHA", Description = "", CategoryType = "", Category = "", Price = 1.2m  },
+            new() { Id = 4, Name = "RADH", Description = "", CategoryType = "", Category = "", Price = 1.2m  }
+        ];
 
         [HttpGet("error")]
         public ActionResult DisplayError()
@@ -51,7 +46,7 @@ namespace AccountManagement.WebAPI.Controllers
                 var error = new ApiError
                 {
                     FieldErrors = null,
-                    GeneralErrors = new List<string> { $"Product with id {id} not found." }
+                    GeneralErrors = [ $"Product with id {id} not found." ]
                 };
 
                 return NotFound(ApiResponse<Product>.Failure(error, $"Product with id {id} not found.", 404, HttpContext.TraceIdentifier));

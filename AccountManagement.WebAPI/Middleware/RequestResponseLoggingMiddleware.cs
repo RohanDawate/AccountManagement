@@ -6,11 +6,9 @@ using System.Text;
 namespace AccountManagement.WebAPI.Middleware
 {
  
-    public class RequestResponseLoggingMiddleware
+    public class RequestResponseLoggingMiddleware(RequestDelegate next)
     {
-        private readonly RequestDelegate _next;
-
-        public RequestResponseLoggingMiddleware(RequestDelegate next) => _next = next;
+        private readonly RequestDelegate _next = next;
 
         public async Task InvokeAsync(HttpContext context)
         {
@@ -63,7 +61,7 @@ namespace AccountManagement.WebAPI.Middleware
                 ResponseBody = responseBody,
                 StatusCode = context.Response.StatusCode,
                 Message = exception != null ? "Unhandled exception" : "Request processed",
-                StackTrace = exception?.ToString(),
+                StackTrace = exception != null ? LoggingExtensions.BuildCleanStackTrace(exception) : null,
                 IsSuccess = context.Response.StatusCode < 400
             };
 
