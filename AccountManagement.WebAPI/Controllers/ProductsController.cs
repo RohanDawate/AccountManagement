@@ -1,6 +1,8 @@
 ﻿using AccountManagement.Application.Common.Responses;
+using AccountManagement.Application.Exceptions;
 using AccountManagement.Application.Validators;
 using AccountManagement.Domain.Entities;
+using AccountManagement.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,6 +45,12 @@ namespace AccountManagement.WebAPI.Controllers
 
             if (product == null)
             {
+                if (product == null)
+                {
+                    // Example: throw a DomainException instead of returning NotFound
+                    throw new DomainException($"Product with id {id} not found.");
+                }
+
                 var error = new ApiError
                 {
                     FieldErrors = null,
@@ -65,6 +73,16 @@ namespace AccountManagement.WebAPI.Controllers
             var result = _validator.Validate(product);
             if (!result.IsValid)
                 throw new ValidationException(result.Errors);
+
+            // Domain rule: price must be > 0
+            if (product.Price <= 0)
+                throw new DomainException("Product price must be greater than zero.");
+
+            // Business rule: product name must be unique
+            if (products.Any(p => p.Name == product.Name))
+                throw new BusinessException($"Product with name '{product.Name}' already exists.");
+
+
 
             products.Add(product);
 

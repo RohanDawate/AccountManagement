@@ -1,5 +1,6 @@
 ﻿using AccountManagement.Application.Common.Responses;
-using AccountManagement.WebAPI.Extensions;
+using AccountManagement.Application.Exceptions;
+using AccountManagement.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc.Controllers;
 
@@ -47,6 +48,46 @@ namespace AccountManagement.WebAPI.Middleware
                 context.Response.StatusCode = StatusCodes.Status400BadRequest;
                 await context.Response.WriteAsJsonAsync(response);
             }
+            catch (DomainException dex)
+            {
+                context.Response.Body = originalBodyStream;
+
+                var errorResponse = new ApiError
+                {
+                    GeneralErrors = new List<string> { dex.Message }
+                };
+
+                var traceId = context.TraceIdentifier;
+                var response = ApiResponse<object>.Failure(
+                    status: StatusCodes.Status422UnprocessableEntity,
+                    message: "Domain rule violation",
+                    error: errorResponse,
+                    traceId: traceId
+                );
+
+                context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
+                await context.Response.WriteAsJsonAsync(response);
+            }
+            catch (BusinessException bex)
+            {
+                context.Response.Body = originalBodyStream;
+
+                var errorResponse = new ApiError
+                {
+                    GeneralErrors = new List<string> { bex.Message }
+                };
+
+                var traceId = context.TraceIdentifier;
+                var response = ApiResponse<string>.Failure(
+                    status: StatusCodes.Status409Conflict,
+                    message: "Business rule violation",
+                    error: errorResponse,
+                    traceId: traceId
+                );
+
+                context.Response.StatusCode = StatusCodes.Status409Conflict;
+                await context.Response.WriteAsJsonAsync(response);
+            }
             catch (Exception ex)
             {
                 context.Response.Body = originalBodyStream; // ✅ restore
@@ -78,10 +119,7 @@ namespace AccountManagement.WebAPI.Middleware
 
                 // ✅ Explicitly set status code before writing
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError; 
-                context.Response.ContentType = "application/json";
-
                 await context.Response.WriteAsJsonAsync(response);
-
             }
         }
     }

@@ -5,9 +5,9 @@ namespace AccountManagement.WebAPI.Extensions
 {
     public static class LoggingExtensions
     {
-        public static string BuildCleanStackTrace(Exception exception)
+        public static string BuildCleanStackTrace(Exception ex)
         {
-            var stackTrace = new System.Diagnostics.StackTrace(exception, true);
+            var stackTrace = new StackTrace(ex, true);
             var frames = stackTrace.GetFrames();
 
             if (frames == null) return new StackFrame().ToString();
@@ -38,8 +38,8 @@ namespace AccountManagement.WebAPI.Extensions
                 }
 
                 sb.AppendLine(
-                    $"at {fullName}.{method.Name} " +
-                    $"({filePath}:{line})"
+                    $" at {fullName}.{method.Name} " +
+                    $"({filePath} Line no:{line})"
                 );
             }
 

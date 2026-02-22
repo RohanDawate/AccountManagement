@@ -43,6 +43,7 @@ namespace AccountManagement.WebAPI.Middleware
             var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>(); 
             var controllerName = actionDescriptor?.ControllerName; 
             var actionName = actionDescriptor?.ActionName;
+            var statusCode = context.Response.StatusCode;
 
             // Capture stack trace if ExceptionMiddleware stored it
             var exception = context.Items["Exception"] as Exception;
@@ -59,14 +60,26 @@ namespace AccountManagement.WebAPI.Middleware
                 Headers = headers,
                 RequestBody = requestBody,
                 ResponseBody = responseBody,
-                StatusCode = context.Response.StatusCode,
-                Message = exception != null ? "Unhandled exception" : "Request processed",
+                StatusCode = statusCode,
+                Message = exception != null ? "An unexpected error occurred while processing the request" : "Request processed",
                 StackTrace = exception != null ? LoggingExtensions.BuildCleanStackTrace(exception) : null,
                 IsSuccess = context.Response.StatusCode < 400
             };
 
-            Log.Information("{@ApiLogEntry}", logEntry);
-            
+            // Choose log level based on status code
+            if (statusCode >= 500)
+            {
+                Log.Error("{@ApiLogEntry}", logEntry);
+            }
+            else if (statusCode >= 400)
+            {
+                Log.Warning("{@ApiLogEntry}", logEntry);
+            }
+            else
+            {
+                Log.Information("{@ApiLogEntry}", logEntry);
+            }
+
             context.Response.Body = originalBodyStream;
 
         }
