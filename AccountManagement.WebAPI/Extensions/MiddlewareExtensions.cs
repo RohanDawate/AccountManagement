@@ -4,7 +4,7 @@ namespace AccountManagement.WebAPI.Extensions
 {
     public static class MiddlewareExtensions
     {
-        public static IApplicationBuilder UseApiMiddlewares(this IApplicationBuilder app)
+        public static IApplicationBuilder UseApiMiddleware(this IApplicationBuilder app)
         {
             // 1️. TraceId enrichment — push TraceId once
             app.UseMiddleware<TraceIdMiddleware>();

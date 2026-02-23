@@ -1,29 +1,41 @@
 ﻿using Serilog.Context;
 using System.Diagnostics;
+using AccountManagement.Application.Common.Tracing;
 
 namespace AccountManagement.WebAPI.Middleware
 {
     public class TraceIdMiddleware
     {
         private readonly RequestDelegate _next;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public TraceIdMiddleware(RequestDelegate next) => _next = next;
+        public TraceIdMiddleware(RequestDelegate next, IServiceScopeFactory scopeFactory)
+        {
+            _next = next;
+            _scopeFactory = scopeFactory;
+        }
 
         public async Task InvokeAsync(HttpContext context)
         {
+            using var scope = _scopeFactory.CreateScope();
+            var traceIdProvider = scope.ServiceProvider.GetRequiredService<ITraceIdProvider>();
+
+            // ✅ Get traceId from provider (Activity, HttpContext, GUID fallback)
+            var traceId = traceIdProvider.GetTraceId();
+
+            // ✅ Capture SpanId and ParentId from Activity if available
             var activity = Activity.Current;
+            var spanId = activity?.SpanId.ToString() ?? string.Empty;
+            var parentId = activity?.ParentId ?? string.Empty;
 
-            // Prefer distributed tracing IDs if available
-            var traceId = activity?.TraceId.ToString() ?? context.TraceIdentifier;
-            var spanId = activity?.SpanId.ToString();
-            var parentId = activity?.ParentId;
-
+            // Push all correlation properties into Serilog LogContext
             using (LogContext.PushProperty("TraceId", traceId))
-            using (LogContext.PushProperty("SpanId", spanId ?? string.Empty))
-            using (LogContext.PushProperty("ParentId", parentId ?? string.Empty))
+            using (LogContext.PushProperty("SpanId", spanId))
+            using (LogContext.PushProperty("ParentId", parentId))
             {
                 await _next(context);
             }
+
         }
     }
 }

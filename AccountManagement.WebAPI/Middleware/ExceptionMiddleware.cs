@@ -1,4 +1,5 @@
 ﻿using AccountManagement.Application.Common.Responses;
+using AccountManagement.Application.Common.Tracing;
 using AccountManagement.Application.Exceptions;
 using AccountManagement.Domain.Exceptions;
 using FluentValidation;
@@ -10,11 +11,13 @@ namespace AccountManagement.WebAPI.Middleware
     {
         private readonly RequestDelegate _next;
         private readonly Serilog.ILogger _logger;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public ExceptionMiddleware(RequestDelegate next, Serilog.ILogger logger) 
-        { 
+        public ExceptionMiddleware(RequestDelegate next, Serilog.ILogger logger, IServiceScopeFactory scopeFactory)
+        {
             _next = next; 
-            _logger = logger; 
+            _logger = logger;
+            _scopeFactory = scopeFactory;
         }
 
         public async Task Invoke(HttpContext context)
@@ -35,7 +38,11 @@ namespace AccountManagement.WebAPI.Middleware
                 var controller = actionDescriptor?.ControllerName ?? "UnknownController";
                 var action = actionDescriptor?.ActionName ?? "UnknownAction";
                 var operation = $"{controller}.{action}";
-                var traceId = context.TraceIdentifier;
+
+                // ✅ Resolve ITraceIdProvider per request
+                using var scope = _scopeFactory.CreateScope();
+                var traceIdProvider = scope.ServiceProvider.GetRequiredService<ITraceIdProvider>();
+                var traceId = traceIdProvider.GetTraceId();
 
                 int statusCode;
                 string message;

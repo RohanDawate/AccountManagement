@@ -1,4 +1,5 @@
-﻿using AccountManagement.Application.Validators;
+﻿using AccountManagement.Application.Common.Tracing;
+using AccountManagement.Application.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 
@@ -8,6 +9,10 @@ namespace AccountManagement.WebAPI.Extensions
     {
         public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration config)
         {
+            // Register providers
+            services.AddHttpContextAccessor();
+            services.AddScoped<ITraceIdProvider, TraceIdProvider>();
+
             // Controllers
             services.AddControllers()
                 .AddJsonOptions(options =>

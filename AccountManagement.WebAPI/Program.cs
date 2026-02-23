@@ -1,3 +1,4 @@
+using AccountManagement.Application.Common.Tracing;
 using AccountManagement.WebAPI.Extensions;
 
 
@@ -12,7 +13,7 @@ builder.Services.AddApiServices(builder.Configuration);
 var app = builder.Build();
 
 // Middleware pipeline
-app.UseApiMiddlewares(); 
+app.UseApiMiddleware(); 
 app.MapApiEndpoints(app.Environment);
 
 app.Run();

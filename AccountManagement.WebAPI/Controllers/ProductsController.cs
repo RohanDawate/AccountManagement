@@ -31,11 +31,10 @@ namespace AccountManagement.WebAPI.Controllers
         [HttpGet]
         public ActionResult<List<Product>> GetProducts()
         {
-            return Ok(ApiResponse<IEnumerable<Product>>.Ok(
+            return Ok(ApiResponseFactory.Ok<IEnumerable<Product>>(
                 products,
                 message: "Products retrieved successfully",
-                status: 200,
-                traceId: HttpContext.TraceIdentifier));
+                status: StatusCodes.Status200OK));
         }
 
         [HttpGet("{id}")]
@@ -57,14 +56,16 @@ namespace AccountManagement.WebAPI.Controllers
                     GeneralErrors = [ $"Product with id {id} not found." ]
                 };
 
-                return NotFound(ApiResponse<Product>.Failure(error, $"Product with id {id} not found.", 404, HttpContext.TraceIdentifier));
+                return NotFound(ApiResponseFactory.Failure<Product>(
+                    error, 
+                    message: $"Product with id {id} not found.", 
+                    status: StatusCodes.Status404NotFound));
             }
 
-            return Ok(ApiResponse<Product>.Ok(
+            return Ok(ApiResponseFactory.Ok<Product>(
                 product, 
                 message: "Product retrieved successfully", 
-                status: 200, 
-                traceId: HttpContext.TraceIdentifier));
+                status: StatusCodes.Status200OK));
         }
 
         [HttpPost]
@@ -84,11 +85,10 @@ namespace AccountManagement.WebAPI.Controllers
 
             products.Add(product);
 
-            return Ok(ApiResponse<Product>.Ok(
+            return Ok(ApiResponseFactory.Ok<Product>(
                 product,
                 message: "Product created successfully",
-                status: 200,
-                traceId: HttpContext.TraceIdentifier));
+                status: StatusCodes.Status200OK));
         }
     }
 }
