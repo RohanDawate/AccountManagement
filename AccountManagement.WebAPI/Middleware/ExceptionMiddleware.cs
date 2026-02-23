@@ -24,70 +24,7 @@ namespace AccountManagement.WebAPI.Middleware
             try
             {
                 await _next(context);
-            }
-            catch (ValidationException vex)
-            {
-                context.Response.Body = originalBodyStream; // ✅ restore
-
-                var errorResponse = new ApiError
-                {
-                    FieldErrors = vex.Errors.GroupBy(e => e.PropertyName).ToDictionary(
-                        g => g.Key,
-                        g => g.Select(e => e.ErrorMessage).ToArray()
-                    )
-                };
-
-                var traceId = context.TraceIdentifier;
-                var response = ApiResponse<object>.Failure(
-                    error: errorResponse,
-                    message: "Validation failed",
-                    status: StatusCodes.Status400BadRequest,                    
-                    traceId: traceId
-                );
-
-                context.Response.StatusCode = StatusCodes.Status400BadRequest;
-                await context.Response.WriteAsJsonAsync(response);
-            }
-            catch (DomainException dex)
-            {
-                context.Response.Body = originalBodyStream;
-
-                var errorResponse = new ApiError
-                {
-                    GeneralErrors = new List<string> { dex.Message }
-                };
-
-                var traceId = context.TraceIdentifier;
-                var response = ApiResponse<object>.Failure(
-                    status: StatusCodes.Status422UnprocessableEntity,
-                    message: "Domain rule violation",
-                    error: errorResponse,
-                    traceId: traceId
-                );
-
-                context.Response.StatusCode = StatusCodes.Status422UnprocessableEntity;
-                await context.Response.WriteAsJsonAsync(response);
-            }
-            catch (BusinessException bex)
-            {
-                context.Response.Body = originalBodyStream;
-
-                var errorResponse = new ApiError
-                {
-                    GeneralErrors = new List<string> { bex.Message }
-                };
-
-                var traceId = context.TraceIdentifier;
-                var response = ApiResponse<string>.Failure(
-                    status: StatusCodes.Status409Conflict,
-                    message: "Business rule violation",
-                    error: errorResponse,
-                    traceId: traceId
-                );
-
-                context.Response.StatusCode = StatusCodes.Status409Conflict;
-                await context.Response.WriteAsJsonAsync(response);
-            }
+            }            
             catch (Exception ex)
             {
                 context.Response.Body = originalBodyStream; // ✅ restore
@@ -95,30 +32,76 @@ namespace AccountManagement.WebAPI.Middleware
                 // Capture request details
                 var endpoint = context.GetEndpoint(); 
                 var actionDescriptor = endpoint?.Metadata.GetMetadata<ControllerActionDescriptor>(); 
-                var controllerName = actionDescriptor?.ControllerName; 
-                var actionName = actionDescriptor?.ActionName;
+                var controller = actionDescriptor?.ControllerName ?? "UnknownController";
+                var action = actionDescriptor?.ActionName ?? "UnknownAction";
+                var operation = $"{controller}.{action}";
+                var traceId = context.TraceIdentifier;
+
+                int statusCode;
+                string message;
+                string errorType;
+                ApiError errorResponse;
+
+                switch (ex)
+                {
+                    case ValidationException vex:
+                        statusCode = StatusCodes.Status400BadRequest;
+                        message = "Validation failed";
+                        errorType = "Validation";
+                        errorResponse = new ApiError
+                        {
+                            FieldErrors = vex.Errors.GroupBy(e => e.PropertyName).ToDictionary(
+                                g => g.Key,
+                                g => g.Select(e => e.ErrorMessage).ToArray()
+                            )
+                        };
+                        break;
+
+                    case DomainException dex:
+                        statusCode = StatusCodes.Status422UnprocessableEntity;
+                        message = "Domain rule violation";
+                        errorType = "Domain";
+                        errorResponse = new ApiError
+                        {
+                            GeneralErrors = new List<string> { dex.Message }
+                        };
+                        break;
+
+                    case BusinessException bex:
+                        statusCode = StatusCodes.Status409Conflict;
+                        message = "Business rule violation";
+                        errorType = "Business";
+                        errorResponse = new ApiError
+                        {
+                            GeneralErrors = new List<string> { bex.Message }
+                        };
+                        break;
+
+                    default:
+                        statusCode = StatusCodes.Status500InternalServerError;
+                        message = "Unexpected system error";
+                        errorType = "System";
+                        errorResponse = new ApiError
+                        {
+                            GeneralErrors = new List<string> { ex.Message }
+                        };
+                        break;
+                }
 
                 // Store exception for unified logging
                 context.Items["Exception"] = ex;
-                context.Items["ExceptionController"] = controllerName;
-                context.Items["ExceptionAction"] = actionName;
-                context.Items["ExceptionMethodName"] = ex.TargetSite?.Name;
-                
-                var errorResponse = new ApiError
-                {
-                    GeneralErrors = new List<string> { ex.Message }
-                };
+                context.Items["ErrorType"] = errorType;
+                context.Items["Operation"] = operation;
 
-                var traceId = context.TraceIdentifier;
                 var response = ApiResponse<string>.Failure(
-                    status: StatusCodes.Status500InternalServerError,
-                    message: "An unexpected error occurred",
+                    status: statusCode,
+                    message: message,
                     error: errorResponse,
                     traceId: traceId
                 );
 
                 // ✅ Explicitly set status code before writing
-                context.Response.StatusCode = StatusCodes.Status500InternalServerError; 
+                context.Response.StatusCode = statusCode; 
                 await context.Response.WriteAsJsonAsync(response);
             }
         }

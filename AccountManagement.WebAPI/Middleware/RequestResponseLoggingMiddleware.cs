@@ -47,23 +47,25 @@ namespace AccountManagement.WebAPI.Middleware
 
             // Capture stack trace if ExceptionMiddleware stored it
             var exception = context.Items["Exception"] as Exception;
-
-            var stackTrace = context.Items["ExceptionStackTrace"]?.ToString();
-            var exceptionController = context.Items["ExceptionController"]?.ToString() ?? controllerName; 
-            var exceptionAction = context.Items["ExceptionAction"]?.ToString() ?? actionName; 
-            var methodName = context.Items["ExceptionMethodName"]?.ToString();
+            var errorType = context.Items["ErrorType"]?.ToString();
+            var operation = context.Items["Operation"]?.ToString();
 
             var logEntry = new ApiLogEntry
             {
                 Timestamp = DateTime.Now,
+                TraceId = context.TraceIdentifier,
                 Endpoint = $"{context.Request.Method} {context.Request.Path}",
                 Headers = headers,
                 RequestBody = requestBody,
                 ResponseBody = responseBody,
                 StatusCode = statusCode,
-                Message = exception != null ? "An unexpected error occurred while processing the request" : "Request processed",
+                IsSuccess = context.Response.StatusCode < 400,
+                Message = exception != null
+                    ? $"{operation} failed"
+                    : $"{controllerName}.{actionName} completed successfully",
+                ErrorType = errorType,
+                ExceptionType = exception?.GetType().Name,
                 StackTrace = exception != null ? LoggingExtensions.BuildCleanStackTrace(exception) : null,
-                IsSuccess = context.Response.StatusCode < 400
             };
 
             // Choose log level based on status code

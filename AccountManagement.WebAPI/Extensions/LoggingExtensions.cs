@@ -23,23 +23,21 @@ namespace AccountManagement.WebAPI.Extensions
                 var declaringType = method.DeclaringType;
                 if (declaringType == null) continue;
 
-                // Skip Microsoft/system noise
                 var fullName = declaringType?.FullName;
-                if (!string.IsNullOrEmpty(fullName) &&
-                    (fullName.StartsWith("Microsoft") || fullName.StartsWith("System")))
+                if (string.IsNullOrWhiteSpace(fullName)) continue;
+
+                // Skip framework noise
+                if (fullName.StartsWith("Microsoft") || fullName.StartsWith("System"))
                     continue;
 
-                var filePath = frame.GetFileName();
+                var file = frame.GetFileName();
                 var line = frame.GetFileLineNumber();
 
-                if (!string.IsNullOrEmpty(filePath))
-                {
-                    filePath = filePath.Replace(rootPath, "").TrimStart('\\');
-                }
+                if (!string.IsNullOrEmpty(file))
+                    file = file.Replace(rootPath, "").TrimStart('\\');
 
                 sb.AppendLine(
-                    $" at {fullName}.{method.Name} " +
-                    $"({filePath} Line no:{line})"
+                    $" at {fullName}.{method.Name} ({file} & Line no:{line})"
                 );
             }
 

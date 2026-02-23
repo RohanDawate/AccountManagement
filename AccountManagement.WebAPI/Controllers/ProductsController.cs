@@ -82,8 +82,6 @@ namespace AccountManagement.WebAPI.Controllers
             if (products.Any(p => p.Name == product.Name))
                 throw new BusinessException($"Product with name '{product.Name}' already exists.");
 
-
-
             products.Add(product);
 
             return Ok(ApiResponse<Product>.Ok(
