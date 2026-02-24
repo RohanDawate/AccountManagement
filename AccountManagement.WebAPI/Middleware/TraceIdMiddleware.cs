@@ -1,6 +1,6 @@
 ﻿using Serilog.Context;
 using System.Diagnostics;
-using AccountManagement.Application.Common.Tracing;
+using AccountManagement.Application.Common;
 
 namespace AccountManagement.WebAPI.Middleware
 {

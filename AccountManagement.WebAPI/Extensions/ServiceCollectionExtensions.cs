@@ -1,4 +1,4 @@
-﻿using AccountManagement.Application.Common.Tracing;
+﻿using AccountManagement.Application.Common;
 using AccountManagement.Application.Validators;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;

@@ -8,9 +8,9 @@
         public string? Endpoint { get; set; }
         public IDictionary<string, string>? Headers { get; set; }
         public bool IsSuccess { get; set; }
+        public int StatusCode { get; set; }
         public string? RequestBody { get; set; }
         public string? ResponseBody { get; set; }
-        public int StatusCode { get; set; }
         public string? Message { get; set; }
         public string? ErrorType { get; set; }
         public string? ExceptionType { get; set; }

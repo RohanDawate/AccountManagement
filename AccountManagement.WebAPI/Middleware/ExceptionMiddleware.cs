@@ -1,5 +1,5 @@
 ﻿using AccountManagement.Application.Common.Responses;
-using AccountManagement.Application.Common.Tracing;
+using AccountManagement.Application.Common;
 using AccountManagement.Application.Exceptions;
 using AccountManagement.Domain.Exceptions;
 using FluentValidation;

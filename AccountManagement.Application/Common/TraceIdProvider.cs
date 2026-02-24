@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.Diagnostics;
 
-namespace AccountManagement.Application.Common.Tracing
+namespace AccountManagement.Application.Common
 {
     public interface ITraceIdProvider
     {
@@ -19,18 +19,19 @@ namespace AccountManagement.Application.Common.Tracing
 
         public string GetTraceId()
         {
-            // Prefer distributed tracing (Activity)
+            // 1. Prefer HttpContext.TraceIdentifier (GUID style)
+            var httpTraceId = _httpContextAccessor?.HttpContext?.TraceIdentifier;
+            if (!string.IsNullOrEmpty(httpTraceId))
+                return httpTraceId;
+
+            // 2. Fallback to Activity.TraceId, but convert to GUID format
             var activity = Activity.Current;
             if (activity != null)
                 return activity.TraceId.ToString();
 
-            // Use HttpContext.TraceIdentifier if available
-            var traceId = _httpContextAccessor?.HttpContext?.TraceIdentifier;
-            if (!string.IsNullOrEmpty(traceId))
-                return traceId;
-
-            // Fallback for batch jobs / Control-M jobs
+            // 3. Final fallback: generate a new GUID
             return Guid.NewGuid().ToString();
+
         }
     }
 

@@ -1,19 +1,20 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using AccountManagement.Application.Common;
+using Microsoft.AspNetCore.Http;
 
 namespace AccountManagement.Application.Common.Responses
 {
     public static class ApiResponseFactory
     {
-        private static IHttpContextAccessor? _httpContextAccessor;
+        private static ITraceIdProvider? _traceIdProvider;
 
-        public static void Configure(IHttpContextAccessor accessor)
+        public static void Configure(ITraceIdProvider provider)
         {
-            _httpContextAccessor = accessor;
+            _traceIdProvider = provider;
         }
 
         private static string GetTraceId()
         {
-            return _httpContextAccessor?.HttpContext?.TraceIdentifier ?? Guid.NewGuid().ToString();
+            return _traceIdProvider?.GetTraceId() ?? Guid.NewGuid().ToString();
         }
 
         public static ApiResponse<T> Ok<T>(T data, string message, int status)

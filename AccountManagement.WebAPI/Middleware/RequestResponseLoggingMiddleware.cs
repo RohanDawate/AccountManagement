@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Serilog;
 using System.Text;
+using System.Text.Json;
 
 namespace AccountManagement.WebAPI.Middleware
 {
@@ -50,19 +51,40 @@ namespace AccountManagement.WebAPI.Middleware
             var errorType = context.Items["ErrorType"]?.ToString();
             var operation = context.Items["Operation"]?.ToString();
 
+            // Capture controller message if any
+            var doc = JsonDocument.Parse(responseBody);
+            var root = doc.RootElement;
+            string? ctrlMessage = root.GetProperty("message").GetString();
+
+            string message;
+            if (!string.IsNullOrEmpty(ctrlMessage))
+            {
+                // Case 1: Use the message from ApiResponse
+                message = ctrlMessage;
+            }
+            else if (exception != null)
+            {
+                // Case 2: Exception occurred
+                message = $"Error: {exception.Message}";
+            }
+            else
+            {
+                // Case 3: Default fallback
+                message = $"{controllerName}.{actionName} completed successfully";
+            }
+
             var logEntry = new ApiLogEntry
             {
                 Timestamp = DateTime.Now,
                 TraceId = context.TraceIdentifier,
+                Operation = operation,
                 Endpoint = $"{context.Request.Method} {context.Request.Path}",
                 Headers = headers,
+                IsSuccess = context.Response.StatusCode < 400,
+                StatusCode = statusCode,                
                 RequestBody = requestBody,
                 ResponseBody = responseBody,
-                StatusCode = statusCode,
-                IsSuccess = context.Response.StatusCode < 400,
-                Message = exception != null
-                    ? $"{operation} failed"
-                    : $"{controllerName}.{actionName} completed successfully",
+                Message = message,
                 ErrorType = errorType,
                 ExceptionType = exception?.GetType().Name,
                 StackTrace = exception != null ? LoggingExtensions.BuildCleanStackTrace(exception) : null,
