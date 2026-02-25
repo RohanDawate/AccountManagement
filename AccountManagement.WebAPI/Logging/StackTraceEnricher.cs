@@ -2,7 +2,7 @@
 using Serilog.Events;
 using System.Diagnostics;
 
-namespace AccountManagement.WebAPI.Extensions
+namespace AccountManagement.WebAPI.Logging
 {
     public class StackTraceEnricher : ILogEventEnricher
     {

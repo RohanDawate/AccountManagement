@@ -1,4 +1,5 @@
 ﻿using AccountManagement.WebAPI.Extensions;
+using AccountManagement.WebAPI.Logging;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Serilog;
 using System.Text;
@@ -14,9 +15,6 @@ namespace AccountManagement.WebAPI.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             context.Request.EnableBuffering();
-
-            // Capture headers
-            var headers = context.Request.Headers.ToDictionary(h => h.Key, h => h.Value.ToString());
 
             // Capture request body
             string requestBody = "";
@@ -79,11 +77,12 @@ namespace AccountManagement.WebAPI.Middleware
                 TraceId = context.TraceIdentifier,
                 Operation = operation,
                 Endpoint = $"{context.Request.Method} {context.Request.Path}",
-                Headers = headers,
+                Headers = RequestSanitizer.SanitizeHeaders(context.Request.Headers),
+                Query = RequestSanitizer.SanitizeQuery(context.Request.QueryString.Value),
+                RequestBody = RequestSanitizer.SanitizeBody(requestBody),
+                ResponseBody = RequestSanitizer.SanitizeBody(responseBody),
                 IsSuccess = context.Response.StatusCode < 400,
-                StatusCode = statusCode,                
-                RequestBody = requestBody,
-                ResponseBody = responseBody,
+                StatusCode = statusCode,
                 Message = message,
                 ErrorType = errorType,
                 ExceptionType = exception?.GetType().Name,
@@ -92,17 +91,11 @@ namespace AccountManagement.WebAPI.Middleware
 
             // Choose log level based on status code
             if (statusCode >= 500)
-            {
                 Log.Error("{@ApiLogEntry}", logEntry);
-            }
             else if (statusCode >= 400)
-            {
                 Log.Warning("{@ApiLogEntry}", logEntry);
-            }
             else
-            {
                 Log.Information("{@ApiLogEntry}", logEntry);
-            }
 
             context.Response.Body = originalBodyStream;
 
