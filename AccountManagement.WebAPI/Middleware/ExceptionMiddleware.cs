@@ -1,9 +1,10 @@
-﻿using AccountManagement.Application.Common.Responses;
-using AccountManagement.Application.Common;
+﻿using AccountManagement.Application.Common;
+using AccountManagement.Application.Common.Responses;
 using AccountManagement.Application.Exceptions;
 using AccountManagement.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc.Controllers;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace AccountManagement.WebAPI.Middleware
 {
@@ -27,6 +28,16 @@ namespace AccountManagement.WebAPI.Middleware
             try
             {
                 await _next(context);
+
+                // Handle framework-generated errors (e.g., 404, 415) if no exception was thrown
+                if (context.Response.StatusCode >= 400 && !context.Response.HasStarted)
+                {
+                    await WriteErrorResponseAsync(context,
+                        statusCode: context.Response.StatusCode,
+                        message: ReasonPhrases.GetReasonPhrase(context.Response.StatusCode),
+                        errorType: "HttpError",
+                        errors: new List<string> { $"HTTP {context.Response.StatusCode}" });
+                }
             }            
             catch (Exception ex)
             {
@@ -108,10 +119,31 @@ namespace AccountManagement.WebAPI.Middleware
                 );
 
                 // ✅ Explicitly set status code before writing
+                context.Response.Clear(); // ✅ prevent duplicate payloads
                 context.Response.StatusCode = statusCode; 
                 await context.Response.WriteAsJsonAsync(response);
             }
         }
+
+        private static async Task WriteErrorResponseAsync(HttpContext context,
+            int statusCode,
+            string message,
+            string errorType,
+            List<string> errors)
+        {
+            var response = ApiResponse<string>.Failure(
+                status: statusCode,
+                message: message,
+                error: new ApiError { GeneralErrors = errors },
+                traceId: context.TraceIdentifier
+            );
+
+            context.Response.Clear(); // ✅ prevent duplicate payloads
+            context.Response.StatusCode = statusCode;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(response);
+        }
+
     }
 
 }

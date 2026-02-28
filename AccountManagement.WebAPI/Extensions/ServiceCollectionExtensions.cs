@@ -1,6 +1,7 @@
 ﻿using AccountManagement.Application.Common;
 using AccountManagement.Application.Validators;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AccountManagement.WebAPI.Extensions
@@ -25,12 +26,18 @@ namespace AccountManagement.WebAPI.Extensions
             services.AddOpenApi();
             services.AddEndpointsApiExplorer();
 
+            // Register FluentValidation
+            services.AddFluentValidationAutoValidation()
+                            .AddFluentValidationClientsideAdapters();
+
+
             // FluentValidation
             services.AddValidatorsFromAssemblyContaining<ProductValidator>();
 
             // Disable automatic 400 responses from [ApiController]
             services.Configure<ApiBehaviorOptions>(options =>
             {
+                options.SuppressMapClientErrors = true;
                 options.SuppressModelStateInvalidFilter = true;
             });
 

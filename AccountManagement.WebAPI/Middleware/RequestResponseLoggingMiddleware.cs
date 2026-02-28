@@ -50,9 +50,34 @@ namespace AccountManagement.WebAPI.Middleware
             var operation = context.Items["Operation"]?.ToString();
 
             // Capture controller message if any
-            var doc = JsonDocument.Parse(responseBody);
-            var root = doc.RootElement;
-            string? ctrlMessage = root.GetProperty("message").GetString();
+            string? ctrlMessage = null;
+            if (!string.IsNullOrWhiteSpace(responseBody))
+            {
+                try
+                {
+                    using var doc = JsonDocument.Parse(responseBody);
+                    var root = doc.RootElement;
+
+                    if (root.ValueKind == JsonValueKind.Object &&
+                        root.TryGetProperty("message", out var messageElement))
+                    {
+                        ctrlMessage = messageElement.GetString();
+                    }
+                    else if (root.TryGetProperty("title", out var titleElement))
+                    {
+                        // Use "title" if "message" is missing (common in RFC error responses)
+                        ctrlMessage = titleElement.GetString();
+                    }
+
+                    if (root.TryGetProperty("title", out var titleElementForError))
+                        errorType = titleElementForError.GetString();
+                }
+                catch (JsonException)
+                {
+                    // Response body was not valid JSON (e.g., plain text or HTML error page)
+                    ctrlMessage = null;
+                }
+            }
 
             string message;
             if (!string.IsNullOrEmpty(ctrlMessage))
@@ -64,6 +89,12 @@ namespace AccountManagement.WebAPI.Middleware
             {
                 // Case 2: Exception occurred
                 message = $"Error: {exception.Message}";
+            }
+            else if (statusCode >= 400)
+            {
+                // Fallback for error responses without "message"
+                message = $"Request failed with status code {statusCode}";
+                errorType ??= $"HTTP {statusCode}";
             }
             else
             {

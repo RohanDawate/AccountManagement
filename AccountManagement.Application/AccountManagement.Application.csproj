@@ -9,7 +9,6 @@
   <ItemGroup>
     <Folder Include="Behaviors\" />
     <Folder Include="Extensions\" />
-    <Folder Include="Features\" />
     <Folder Include="Interfaces\" />
   </ItemGroup>
 
