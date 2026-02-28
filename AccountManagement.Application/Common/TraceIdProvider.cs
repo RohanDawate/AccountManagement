@@ -27,7 +27,11 @@ namespace AccountManagement.Application.Common
             // 2. Fallback to Activity.TraceId, but convert to GUID format
             var activity = Activity.Current;
             if (activity != null)
-                return activity.TraceId.ToString();
+            {
+                var traceId = activity.TraceId.ToString();
+                // Normalize to GUID if possible
+                return Guid.TryParse(traceId, out var guid) ? guid.ToString() : traceId;
+            }
 
             // 3. Final fallback: generate a new GUID
             return Guid.NewGuid().ToString();

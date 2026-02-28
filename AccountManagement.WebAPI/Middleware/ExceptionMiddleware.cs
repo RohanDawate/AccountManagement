@@ -75,7 +75,7 @@ namespace AccountManagement.WebAPI.Middleware
                         break;
 
                     case BusinessException bex:
-                        statusCode = StatusCodes.Status409Conflict;
+                        statusCode =  bex.StatusCode;
                         message = "Business rule violation";
                         errorType = "Business";
                         errorResponse = new ApiError
