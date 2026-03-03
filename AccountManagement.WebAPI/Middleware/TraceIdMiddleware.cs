@@ -20,10 +20,8 @@ namespace AccountManagement.WebAPI.Middleware
             using var scope = _scopeFactory.CreateScope();
             var traceIdProvider = scope.ServiceProvider.GetRequiredService<ITraceIdProvider>();
 
-            // ✅ Get traceId from provider (Activity, HttpContext, GUID fallback)
+            // Get traceId from provider (Activity, HttpContext, GUID fallback)
             var traceId = traceIdProvider.GetTraceId();
-
-            // ✅ Capture SpanId and ParentId from Activity if available
             var activity = Activity.Current;
             var spanId = activity?.SpanId.ToString() ?? string.Empty;
             var parentId = activity?.ParentId ?? string.Empty;
@@ -33,6 +31,8 @@ namespace AccountManagement.WebAPI.Middleware
             using (LogContext.PushProperty("SpanId", spanId))
             using (LogContext.PushProperty("ParentId", parentId))
             {
+                // Also add to response headers for client-side correlation
+                context.Response.Headers["X-TraceId"] = traceId;
                 await _next(context);
             }
 

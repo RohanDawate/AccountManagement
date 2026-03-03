@@ -41,7 +41,7 @@ namespace AccountManagement.WebAPI.Middleware
                 // fallback if not ApiResponse
             }
 
-            // ✅ Otherwise wrap raw data into ApiResponse<T>       
+            // Otherwise wrap raw data into ApiResponse<T>       
             ApiResponse<object> response; 
             if (statusCode >= 200 && statusCode < 300) 
             { 

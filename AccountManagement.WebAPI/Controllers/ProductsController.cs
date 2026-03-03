@@ -29,7 +29,7 @@ namespace AccountManagement.WebAPI.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<Product>> GetProducts()
+        public ActionResult<List<Product>> GetAllProducts()
         {
             return Ok(ApiResponseFactory.Ok<IEnumerable<Product>>(
                 products,
@@ -38,7 +38,7 @@ namespace AccountManagement.WebAPI.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<ApiResponse<Product>> GetProduct(int id)
+        public ActionResult<ApiResponse<Product>> GetProductById(int id)
         {
             var product =  products.FirstOrDefault(p => p.Id == id);
 

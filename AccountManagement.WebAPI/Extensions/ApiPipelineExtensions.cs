@@ -17,7 +17,7 @@ namespace AccountManagement.WebAPI.Extensions
             app.UseRouting();
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapApiEndpoints(env); // ✅ now endpoints is IEndpointRouteBuilder
+                endpoints.MapApiEndpoints(env); // now endpoints is IEndpointRouteBuilder
             });
 
             // Configure ApiResponseFactory

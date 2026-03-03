@@ -1,5 +1,8 @@
 ﻿using AccountManagement.Application.Common;
+using AccountManagement.Application.Interfaces;
+using AccountManagement.Application.Services;
 using AccountManagement.Application.Validators;
+using AccountManagement.Infra.Repositories;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +16,9 @@ namespace AccountManagement.WebAPI.Extensions
             // Register providers
             services.AddHttpContextAccessor();
             services.AddScoped<ITraceIdProvider, TraceIdProvider>();
+
+            services.AddScoped<IOrderRepository, OrderRepository>();
+            services.AddScoped<OrderService>();
 
             // Controllers
             services.AddControllers()

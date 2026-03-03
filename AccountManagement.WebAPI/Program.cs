@@ -10,7 +10,7 @@ builder.Services.AddApiServices(builder.Configuration);
 
 var app = builder.Build();
 
-// ✅ Single unified pipeline call
+// Single unified pipeline call
 app.UseApiPipeline(app.Environment);
 
 app.Run();

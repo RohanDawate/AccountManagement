@@ -7,7 +7,7 @@ namespace AccountManagement.WebAPI.Logging
     public class StackTraceEnricher : ILogEventEnricher
     {
 
-        public StackTraceEnricher() { } // ✅ parameterless constructor
+        public StackTraceEnricher() { } // parameterless constructor
 
         public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
         {

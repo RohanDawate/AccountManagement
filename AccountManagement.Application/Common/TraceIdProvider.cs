@@ -35,8 +35,6 @@ namespace AccountManagement.Application.Common
 
             // 3. Final fallback: generate a new GUID
             return Guid.NewGuid().ToString();
-
         }
     }
-
 }

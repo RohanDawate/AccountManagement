@@ -29,19 +29,19 @@ namespace AccountManagement.WebAPI.Middleware
             {
                 await _next(context);
 
-                // Handle framework-generated errors (e.g., 404, 415) if no exception was thrown
-                if (context.Response.StatusCode >= 400 && !context.Response.HasStarted)
-                {
-                    await WriteErrorResponseAsync(context,
-                        statusCode: context.Response.StatusCode,
-                        message: ReasonPhrases.GetReasonPhrase(context.Response.StatusCode),
-                        errorType: "HttpError",
-                        errors: new List<string> { $"HTTP {context.Response.StatusCode}" });
-                }
+                //// Handle framework-generated errors (e.g., 404, 415) if no exception was thrown
+                //if (context.Response.StatusCode >= 400 && !context.Response.HasStarted)
+                //{
+                //    await WriteErrorResponseAsync(context,
+                //        statusCode: context.Response.StatusCode,
+                //        message: ReasonPhrases.GetReasonPhrase(context.Response.StatusCode),
+                //        errorType: "HttpError",
+                //        errors: new List<string> { $"HTTP {context.Response.StatusCode}" });
+                //}
             }            
             catch (Exception ex)
             {
-                context.Response.Body = originalBodyStream; // ✅ restore
+                context.Response.Body = originalBodyStream; // restore
 
                 // Capture request details
                 var endpoint = context.GetEndpoint(); 
@@ -50,7 +50,7 @@ namespace AccountManagement.WebAPI.Middleware
                 var action = actionDescriptor?.ActionName ?? "UnknownAction";
                 var operation = $"{controller}.{action}";
 
-                // ✅ Resolve ITraceIdProvider per request
+                // Resolve ITraceIdProvider per request
                 using var scope = _scopeFactory.CreateScope();
                 var traceIdProvider = scope.ServiceProvider.GetRequiredService<ITraceIdProvider>();
                 var traceId = traceIdProvider.GetTraceId();
@@ -95,6 +95,16 @@ namespace AccountManagement.WebAPI.Middleware
                         };
                         break;
 
+                    case NotFoundException nfex:
+                        statusCode = nfex.StatusCode;
+                        message = "Business rule violation";
+                        errorType = "Business";
+                        errorResponse = new ApiError
+                        {
+                            GeneralErrors = new List<string> { nfex.Message }
+                        };
+                        break;
+
                     default:
                         statusCode = StatusCodes.Status500InternalServerError;
                         message = "Unexpected system error";
@@ -118,31 +128,31 @@ namespace AccountManagement.WebAPI.Middleware
                     traceId: traceId
                 );
 
-                // ✅ Explicitly set status code before writing
-                context.Response.Clear(); // ✅ prevent duplicate payloads
+                // Explicitly set status code before writing
+                context.Response.Clear(); // prevent duplicate payloads
                 context.Response.StatusCode = statusCode; 
                 await context.Response.WriteAsJsonAsync(response);
             }
         }
 
-        private static async Task WriteErrorResponseAsync(HttpContext context,
-            int statusCode,
-            string message,
-            string errorType,
-            List<string> errors)
-        {
-            var response = ApiResponse<string>.Failure(
-                status: statusCode,
-                message: message,
-                error: new ApiError { GeneralErrors = errors },
-                traceId: context.TraceIdentifier
-            );
+        //private static async Task WriteErrorResponseAsync(HttpContext context,
+        //    int statusCode,
+        //    string message,
+        //    string errorType,
+        //    List<string> errors)
+        //{
+        //    var response = ApiResponse<string>.Failure(
+        //        status: statusCode,
+        //        message: message,
+        //        error: new ApiError { GeneralErrors = errors },
+        //        traceId: context.TraceIdentifier
+        //    );
 
-            context.Response.Clear(); // ✅ prevent duplicate payloads
-            context.Response.StatusCode = statusCode;
-            context.Response.ContentType = "application/json";
-            await context.Response.WriteAsJsonAsync(response);
-        }
+        //    context.Response.Clear(); // prevent duplicate payloads
+        //    context.Response.StatusCode = statusCode;
+        //    context.Response.ContentType = "application/json";
+        //    await context.Response.WriteAsJsonAsync(response);
+        //}
 
     }
 
