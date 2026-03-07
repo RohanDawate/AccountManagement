@@ -4,12 +4,12 @@ using AccountManagement.Application.Services;
 using AccountManagement.Application.Validators;
 using AccountManagement.Infra.Interceptors;
 using AccountManagement.Infra.Repositories;
+using AccountManagement.WebAPI.Controllers;
+using AccountManagement.WebAPI.Logging;
 using Castle.DynamicProxy;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
-using Scrutor;
-using Castle.DynamicProxy;
 
 
 namespace AccountManagement.WebAPI.Extensions
@@ -22,16 +22,16 @@ namespace AccountManagement.WebAPI.Extensions
             services.AddHttpContextAccessor();
             services.AddScoped<ITraceIdProvider, TraceIdProvider>();
 
-            services.AddScoped<IOrderRepository, OrderRepository>();
-            services.AddScoped<OrderService>();
-
             // Controllers
-            services.AddControllers()
+            services
+                .AddControllers(options =>
+                {
+                    options.Filters.Add<LoggingActionFilter>();
+                })
                 .AddJsonOptions(options =>
                 {
                     options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
                 });
-
 
             // OpenAPI + Endpoints Explorer
             services.AddOpenApi();
@@ -40,7 +40,6 @@ namespace AccountManagement.WebAPI.Extensions
             // Register FluentValidation
             services.AddFluentValidationAutoValidation()
                             .AddFluentValidationClientsideAdapters();
-
 
             // FluentValidation
             services.AddValidatorsFromAssemblyContaining<ProductValidator>();
@@ -59,36 +58,34 @@ namespace AccountManagement.WebAPI.Extensions
 
         public static IServiceCollection AddInterceptedServices(this IServiceCollection services)
         {
-            var proxyGenerator = new ProxyGenerator();
-
             // Register interceptors
-            services.AddSingleton<LoggingInterceptor>();
-            //services.AddSingleton<ValidationInterceptor>();
-            //services.AddSingleton<RetryInterceptor>();
+            services.AddScoped<LoggingInterceptor>();
+            // services.AddSingleton<ValidationInterceptor>();
+            // services.AddSingleton<RetryInterceptor>();
 
-            // Scan for services/repositories
-            services.Scan(scan => scan
-                .FromAssemblies(typeof(OrderService).Assembly, typeof(OrderRepository).Assembly)
-                .AddClasses(classes => classes.Where(t =>
-                    t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")))
-                .AsImplementedInterfaces()
-                .WithScopedLifetime());
+            // Register ProxyGenerator once
+            services.AddSingleton<ProxyGenerator>();
 
-            // Decorate with Castle proxies
-            foreach (var service in services.Where(s => s.ServiceType.IsInterface))
+            // Register OrderService and OrderRepository
+            services.AddScoped<IOrderService, OrderService>();
+            services.AddScoped<IOrderRepository, OrderRepository>();
+
+
+            // Decorate OrderService
+            services.Decorate<IOrderService>((inner, provider) =>
             {
-                services.Decorate(service.ServiceType, (inner, provider) =>
-                {
-                    var interceptors = new IInterceptor[]
-                    {
-                    provider.GetRequiredService<LoggingInterceptor>(),
-                    //provider.GetRequiredService<ValidationInterceptor>(),
-                    //provider.GetRequiredService<RetryInterceptor>()
-                    };
+                var proxyGenerator = provider.GetRequiredService<ProxyGenerator>();
+                var interceptor = provider.GetRequiredService<LoggingInterceptor>();
+                return proxyGenerator.CreateInterfaceProxyWithTarget(inner, interceptor);
+            });
 
-                    return proxyGenerator.CreateInterfaceProxyWithTarget(service.ServiceType, inner, interceptors);
-                });
-            }
+            // Decorate OrderRepository
+            services.Decorate<IOrderRepository>((inner, provider) =>
+            {
+                var proxyGenerator = provider.GetRequiredService<ProxyGenerator>();
+                var interceptor = provider.GetRequiredService<LoggingInterceptor>();
+                return proxyGenerator.CreateInterfaceProxyWithTarget(inner, interceptor);
+            });
 
             return services;
         }

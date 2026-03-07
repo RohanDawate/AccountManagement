@@ -12,30 +12,27 @@ builder.Host.ConfigureSerilog();
 
 // Service registration
 builder.Services.AddApiServices(builder.Configuration);
-//builder.Services.AddInterceptedServices(); // registers services + interceptors
+builder.Services.AddInterceptedServices(); // registers services + interceptors
 
-// Register interceptor
-builder.Services.AddScoped<LoggingInterceptor>();
+//// Register interceptor
+//builder.Services.AddScoped<LoggingInterceptor>();
 
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+//builder.Services.AddScoped<IOrderService, OrderService>();
+//builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 
-var proxyGenerator = new ProxyGenerator();
+//var proxyGenerator = new ProxyGenerator();
 
-builder.Services.Decorate<IOrderService>((inner, provider) =>
-{
-    var interceptor = provider.GetRequiredService<LoggingInterceptor>();
-    return proxyGenerator.CreateInterfaceProxyWithTarget(inner, interceptor);
-});
+//builder.Services.Decorate<IOrderService>((inner, provider) =>
+//{
+//    var interceptor = provider.GetRequiredService<LoggingInterceptor>();
+//    return proxyGenerator.CreateInterfaceProxyWithTarget(inner, interceptor);
+//});
 
-builder.Services.Decorate<IOrderRepository>((inner, provider) =>
-{
-    var interceptor = provider.GetRequiredService<LoggingInterceptor>();
-    return proxyGenerator.CreateInterfaceProxyWithTarget(inner, interceptor);
-});
-
-
-
+//builder.Services.Decorate<IOrderRepository>((inner, provider) =>
+//{
+//    var interceptor = provider.GetRequiredService<LoggingInterceptor>();
+//    return proxyGenerator.CreateInterfaceProxyWithTarget(inner, interceptor);
+//});
 
 var app = builder.Build();
 
