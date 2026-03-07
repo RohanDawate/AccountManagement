@@ -2,10 +2,15 @@
 using AccountManagement.Application.Interfaces;
 using AccountManagement.Application.Services;
 using AccountManagement.Application.Validators;
+using AccountManagement.Infra.Interceptors;
 using AccountManagement.Infra.Repositories;
+using Castle.DynamicProxy;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+using Scrutor;
+using Castle.DynamicProxy;
+
 
 namespace AccountManagement.WebAPI.Extensions
 {
@@ -50,5 +55,43 @@ namespace AccountManagement.WebAPI.Extensions
             return services;
 
         }
+
+
+        public static IServiceCollection AddInterceptedServices(this IServiceCollection services)
+        {
+            var proxyGenerator = new ProxyGenerator();
+
+            // Register interceptors
+            services.AddSingleton<LoggingInterceptor>();
+            //services.AddSingleton<ValidationInterceptor>();
+            //services.AddSingleton<RetryInterceptor>();
+
+            // Scan for services/repositories
+            services.Scan(scan => scan
+                .FromAssemblies(typeof(OrderService).Assembly, typeof(OrderRepository).Assembly)
+                .AddClasses(classes => classes.Where(t =>
+                    t.Name.EndsWith("Service") || t.Name.EndsWith("Repository")))
+                .AsImplementedInterfaces()
+                .WithScopedLifetime());
+
+            // Decorate with Castle proxies
+            foreach (var service in services.Where(s => s.ServiceType.IsInterface))
+            {
+                services.Decorate(service.ServiceType, (inner, provider) =>
+                {
+                    var interceptors = new IInterceptor[]
+                    {
+                    provider.GetRequiredService<LoggingInterceptor>(),
+                    //provider.GetRequiredService<ValidationInterceptor>(),
+                    //provider.GetRequiredService<RetryInterceptor>()
+                    };
+
+                    return proxyGenerator.CreateInterfaceProxyWithTarget(service.ServiceType, inner, interceptors);
+                });
+            }
+
+            return services;
+        }
+
     }
 }

@@ -5,7 +5,21 @@ using AccountManagement.Domain.Entities;
 
 namespace AccountManagement.Application.Services
 {
-    public class OrderService
+
+    public interface IOrderService
+    {
+        public Task<IEnumerable<Order>> GetAllAsync();
+
+        public Task<Order> GetByIdAsync(long id);
+
+        public Task<Order> CreateAsync(OrderDto dto);
+
+        public Task<Order> UpdateAsync(long id, OrderDto dto);
+
+        public Task DeleteAsync(long id);
+    }
+
+    public class OrderService : IOrderService
     {
         private readonly IOrderRepository _repository;
 

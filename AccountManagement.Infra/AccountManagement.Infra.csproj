@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Castle.Core" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\AccountManagement.Application\AccountManagement.Application.csproj" />
     <ProjectReference Include="..\AccountManagement.Domain\AccountManagement.Domain.csproj" />
   </ItemGroup>

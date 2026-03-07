@@ -11,6 +11,8 @@
 
         public Order(string customerName, decimal totalAmount)
         {
+            Validate(customerName, totalAmount);
+
             Id = GenerateId();
             CustomerName = customerName;
             TotalAmount = totalAmount;
@@ -19,8 +21,18 @@
 
         public void Update(string customerName, decimal totalAmount)
         {
+            Validate(customerName, totalAmount);
+
             CustomerName = customerName;
             TotalAmount = totalAmount;
+        }
+
+        private static void Validate(string customerName, decimal totalAmount)
+        {
+            if (string.IsNullOrWhiteSpace(customerName))
+                throw new ArgumentException("Customer name is required");
+            if (totalAmount <= 0)
+                throw new ArgumentException("Total amount must be positive");
         }
 
         private static long GenerateId()

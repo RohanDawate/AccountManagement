@@ -2,7 +2,7 @@
 {
     public class OrderDto
     {
-        public required string CustomerName { get; set; }
+        public required string CustomerName { get; set; } = string.Empty;
         public decimal TotalAmount { get; set; }
     }
 }
