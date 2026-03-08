@@ -4,13 +4,11 @@ using AccountManagement.Application.Services;
 using AccountManagement.Application.Validators;
 using AccountManagement.Infra.Interceptors;
 using AccountManagement.Infra.Repositories;
-using AccountManagement.WebAPI.Controllers;
 using AccountManagement.WebAPI.Logging;
 using Castle.DynamicProxy;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
-
 
 namespace AccountManagement.WebAPI.Extensions
 {
@@ -39,7 +37,7 @@ namespace AccountManagement.WebAPI.Extensions
 
             // Register FluentValidation
             services.AddFluentValidationAutoValidation()
-                            .AddFluentValidationClientsideAdapters();
+                .AddFluentValidationClientsideAdapters();
 
             // FluentValidation
             services.AddValidatorsFromAssemblyContaining<ProductValidator>();
@@ -52,9 +50,7 @@ namespace AccountManagement.WebAPI.Extensions
             });
 
             return services;
-
         }
-
 
         public static IServiceCollection AddInterceptedServices(this IServiceCollection services)
         {
@@ -69,7 +65,6 @@ namespace AccountManagement.WebAPI.Extensions
             // Register OrderService and OrderRepository
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderRepository, OrderRepository>();
-
 
             // Decorate OrderService
             services.Decorate<IOrderService>((inner, provider) =>

@@ -15,7 +15,6 @@ namespace AccountManagement.Infra.Interceptors
             _traceIdProvider = traceIdProvider;
         }
 
-
         public void Intercept(IInvocation invocation)
         {
             var traceId = _traceIdProvider.GetTraceId();
