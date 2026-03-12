@@ -12,14 +12,18 @@ indent_size = 2
 # Suppress CA1859 (prefer concrete types) 
 dotnet_diagnostic.CA1859.severity = none
 
-# Suppress IDE0090 (new expression can be simplified) 
-dotnet_diagnostic.IDE0090.severity = none 
-
 # Suppress IDE0028 (collection initialization can be simplified) 
 dotnet_diagnostic.IDE0028.severity = none 
+
+# Suppress IDE0044 (make field readonly) 
+dotnet_diagnostic.IDE0044.severity = none
+
+# Suppress IDE0090 (new expression can be simplified) 
+dotnet_diagnostic.IDE0090.severity = none 
 
 # Suppress IDE0290 (use primary constructor) 
 dotnet_diagnostic.IDE0290.severity = none 
 
-# Suppress IDE0044 (make field readonly) 
-dotnet_diagnostic.IDE0044.severity = none
+# Collection initialization can be simplified
+dotnet_diagnostic.IDE0300.severity = none
+dotnet_diagnostic.IDE0301.severity = none

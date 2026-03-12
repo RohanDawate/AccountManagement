@@ -35,7 +35,6 @@ namespace AccountManagement.Application.Services
 
         public async Task<Order> GetByIdAsync(long id)
         {
-            //return await _repository.GetByIdAsync(id);
             return await _repository.GetByIdAsync(id)
                     ?? throw new NotFoundException($"Order with id {id} not found.");
         }

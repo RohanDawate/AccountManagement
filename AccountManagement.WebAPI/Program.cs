@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.ConfigureSerilog();
 
 // Service registration
-builder.Services.AddApiServices(builder.Configuration);
+builder.Services.AddApiServices();
 builder.Services.AddInterceptedServices(); // registers services + interceptors
 
 var app = builder.Build();

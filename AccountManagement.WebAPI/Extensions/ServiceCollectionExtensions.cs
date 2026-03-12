@@ -14,7 +14,7 @@ namespace AccountManagement.WebAPI.Extensions
 {
     public static class ServiceCollectionExtensions
     {
-        public static IServiceCollection AddApiServices(this IServiceCollection services, IConfiguration config)
+        public static IServiceCollection AddApiServices(this IServiceCollection services)
         {
             // Register providers
             services.AddHttpContextAccessor();
