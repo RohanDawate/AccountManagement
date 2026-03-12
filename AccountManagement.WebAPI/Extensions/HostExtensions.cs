@@ -1,5 +1,6 @@
 ﻿using AccountManagement.WebAPI.Logging;
 using Serilog;
+using Serilog.Formatting.Json;
 
 namespace AccountManagement.WebAPI.Extensions
 {
@@ -18,9 +19,9 @@ namespace AccountManagement.WebAPI.Extensions
                     .ReadFrom.Services(services)
                     .Enrich.FromLogContext()
                     .Enrich.With<StackTraceEnricher>() // register your custom enricher
-                    .WriteTo.Console(new Serilog.Formatting.Json.JsonFormatter())
+                    .WriteTo.Console(new JsonFormatter())
                     .WriteTo.File(
-                        new Serilog.Formatting.Json.JsonFormatter(), 
+                        formatter: new JsonFormatter(), 
                         path: logFilePath,
                         rollingInterval: RollingInterval.Day,
                         fileSizeLimitBytes: 1 * 1024 * 1024 , // 1 MB

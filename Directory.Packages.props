@@ -3,21 +3,36 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
+  
+  <!-- ASP.Net Core Packages -->
   <ItemGroup>
-    <PackageVersion Include="Castle.Core" Version="5.2.1" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc" Version="2.3.9" />
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageVersion Include="MediatR" Version="14.0.0" />
+  </ItemGroup>
+  
+  <!-- Fluent Validation -->
+  <ItemGroup>
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.1" />
-    <PackageVersion Include="MediatR" Version="14.0.0" />
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc" Version="2.3.9" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+  </ItemGroup>
+
+  <!-- Interception framework and dependency injection -->
+  <ItemGroup>
+    <PackageVersion Include="Castle.Core" Version="5.2.1" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />
   </ItemGroup>
+  
+  <!-- Logging -->
   <ItemGroup>
-    <PackageVersion Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.3" />
+    <PackageVersion Include="Serilog" Version="4.3.1" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Extensions.Logging" Version="10.0.0" />
     <PackageVersion Include="Serilog.Settings.Configuration" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Sinks.File" Version="7.0.0" />
   </ItemGroup>
+  
 </Project>
