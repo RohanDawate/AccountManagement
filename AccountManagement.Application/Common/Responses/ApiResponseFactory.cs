@@ -1,7 +1,4 @@
-﻿using AccountManagement.Application.Common;
-using Microsoft.AspNetCore.Http;
-
-namespace AccountManagement.Application.Common.Responses
+﻿namespace AccountManagement.Application.Common.Responses
 {
     public static class ApiResponseFactory
     {

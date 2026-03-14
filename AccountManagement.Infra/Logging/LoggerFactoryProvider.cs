@@ -6,15 +6,28 @@ namespace AccountManagement.Infra.Logging
 {
     public static class LoggerFactoryProvider
     {
-        public static ILoggerFactory Create(string logFilePath)
+        private static ILoggerFactory? _loggerFactory;
+
+        public static ILoggerFactory GetLoggerFactory(string contextName = "")
         {
-            var serilogLogger = new LoggerConfiguration()
-                .WriteTo.File(logFilePath,
-                              rollingInterval: RollingInterval.Day,
-                              retainedFileCountLimit: 10)
+            if (_loggerFactory != null) return _loggerFactory;
+
+            var logFileName = LoggerFileNameResolver.Resolve(contextName);
+
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.Console()
+                .WriteTo.File(logFileName, rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
-            return new SerilogLoggerFactory(serilogLogger, dispose: true);
+            _loggerFactory = new SerilogLoggerFactory(Log.Logger, dispose: true);
+
+            return _loggerFactory;
+        }
+
+        public static ILogger<T> CreateLogger<T>(string contextName = "")
+        {
+            return GetLoggerFactory(contextName).CreateLogger<T>();
         }
     }
 }

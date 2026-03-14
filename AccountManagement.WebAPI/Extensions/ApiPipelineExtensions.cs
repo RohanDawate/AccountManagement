@@ -23,7 +23,7 @@ namespace AccountManagement.WebAPI.Extensions
             // Configure ApiResponseFactory
             using (var scope = app.ApplicationServices.CreateScope())
             {
-                var provider = scope.ServiceProvider.GetRequiredService<ITraceIdProvider>();
+                ITraceIdProvider provider = scope.ServiceProvider.GetRequiredService<ITraceIdProvider>();
                 ApiResponseFactory.Configure(provider);
             }
 

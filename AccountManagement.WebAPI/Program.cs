@@ -1,4 +1,5 @@
 ﻿using AccountManagement.WebAPI.Extensions;
+using AccountManagement.Infra.Interceptors;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,7 @@ builder.Host.ConfigureSerilog();
 
 // Service registration
 builder.Services.AddApiServices();
+//builder.Services.AddSolutionWideInterceptors();
 builder.Services.AddInterceptedServices(); // registers services + interceptors
 
 var app = builder.Build();
